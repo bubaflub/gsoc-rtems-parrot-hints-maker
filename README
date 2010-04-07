@@ -3,4 +3,16 @@ Parrot on RTEMS - Parrot compiler hints maker
 For Google Summer of Code 2010
 Bob Kuo
 
-This Makefile will pull all the needed information from an installed RTEMS system and generate a Parrot compiler hints file.
+This Makefile will pull all the needed information from an installed RTEMS system and generate:
+
+  * a Parrot hints file (named after your target CPU and BSP, e.g. "sparc-sis.pm") 
+  * a "parrot_rtems_config_directives" file which contains all the directives for Parrot's Configure.pl script.
+
+USAGE
+
+1) Copy your Parrot hints file into the Parrot source under config/init/hints/.
+2) At the top of the Parrot source directory, run:
+
+  perl Configure.pl --file=/path/to/parrot_rtems_config_directives
+
+Replacing /path/to/ with the actual path.

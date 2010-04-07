@@ -42,6 +42,8 @@ CONFIGURE:
 	echo "cc=\$$CC";\
 	echo "cxx=\$$CXX";\
 	echo "ld=\$$LD";\
+	echo "verbose";\
+	echo "hintsfile=$(RTEMS_CPU)-$(RTEMS_BSP)";\
 	echo ;\
 	echo "=steps";\
 	echo ;\
