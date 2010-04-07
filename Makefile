@@ -22,15 +22,77 @@ HINTS:
 	 echo ;\
 	 echo "sub runstep {"; \
 	 echo "    my ( \$$self, \$$conf ) = @_;"; \
-	 echo "    my \$$libs = \$$conf->data->get('libs');"; \
-	 echo "    # manually override the libraries for now"; \
-	 echo "    \$$libs = ' -lrtemsbsp -lrtemscpu';"; \
-	 echo "    \$$conf->data->set( libs => \$$libs );"; \
+	 echo "    # set rtems lib"; \
+	 echo "    \$$conf->data->set( libs => ' -lrtemsbsp -lrtemscpu' );"; \
+	 echo "    # set os specific information, corresponds to auto::arch"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        cpuarch => '$(RTEMS_CPU)',"; \
+	 echo "        osname => '$(RTEMS_BSP)'"; \
+	 echo "    );"; \
+	 echo "    # set jit information, corresponds to auto::jit"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        jitcapable => 0,"; \
+	 echo "        execcapable => 0"; \
+	 echo "    );"; \
+	 echo "    # set size information, corresponds to auto::sizes"; \
+	 echo "    # \$$conf->data->set("; \
+	 echo "    # );"; \
+	 echo "    # disable ICU, corresponds to auto::icu"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        has_icu    => 0,"; \
+	 echo "        icu_shared => '',"; \
+	 echo "        icu_dir    => '',"; \
+	 echo "    );"; \
+	 echo "    # disable OpenGL, corresponds to auto::opengl"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        has_opengl => 0,"; \
+	 echo "        HAS_OPENGL => 0,"; \
+	 echo "        opengl_lib => '',"; \
+	 echo "        has_glut   => 0,"; \
+	 echo "        HAS_GLUT   => 0,"; \
+	 echo "    );"; \
+	 echo "    # disable dynamic building of NCI call frames,"; \
+	 echo "    # corresponds to auto::frames"; \
+	 echo "    \$$conf->data->set( cc_build_call_frames  => '');"; \
 	 echo "}"; \
 	 echo ;\
 	 echo "1;"; \
 	 echo ;\
          ) >$(RTEMS_CPU)_$(RTEMS_BSP).pm
+
+#
+# attempt to config with the bare minimum set of steps
+#
+# notes:
+#
+# currently, auto::jit is run because it unconditionally sets 
+# many jit configure variables to zero.  when parrot gets a
+# different jit setup then we'll have to disable that step
+# and provide that information in the hints file
+#
+# auto::ctags checks the development environment if
+# ctags is installed and thus can be run
+#
+# auto::perldoc checks if the development environment has
+# a sane perldoc installation 
+#
+# auto::ops checks the parrot source to see which ops
+# files exist
+#
+# since auto::gc currently has an unconditional default
+# we can enable it.  in the future we may have to specify
+# a garbage collector if parrot has an incompatible default
+#
+# inter::libparrot determines if we should build libparrot
+# statically or dynamically.  we will probably have to 
+# provide this information in the hints file eventually
+#
+# inter::charset and inter::encoding determine which
+# charset and encoding should be included with parrot
+#
+# inter::types sets defaults for intval (defaults to long)
+# floatval (defaults to double) and opcode_t (defaults to long)
+# 
 
 CONFIGURE:
 	(echo "=variables";\
@@ -61,50 +123,51 @@ CONFIGURE:
 	echo "init::hints verbose-step";\
 	echo "init::headers";\
 	echo "# inter::progs";\
-	echo "inter::make";\
-	echo "inter::lex";\
-	echo "inter::yacc";\
+	echo "# inter::make";\
+	echo "# inter::lex";\
+	echo "# inter::yacc";\
 	echo "# auto::gcc";\
-	echo "auto::glibc";\
-	echo "auto::backtrace";\
-	echo "# auto::fink";\
-	echo "# auto::macports";\
+	echo "# auto::glibc";\
+	echo "# auto::backtrace";\
 	echo "# auto::msvc";\
-	echo "auto::attributes";\
-	echo "auto::warnings";\
-	echo "init::optimize";\
-	echo "inter::shlibs";\
+	echo "# auto::attributes";\
+	echo "# auto::warnings";\
+	echo "# auto::arch";\
+	echo "# auto::cpu";\
+	echo "# init::optimize";\
+	echo "# inter::shlibs";\
 	echo "inter::libparrot";\
 	echo "inter::charset";\
 	echo "inter::encoding";\
 	echo "inter::types";\
 	echo "auto::ops";\
-	echo "auto::alignptrs";\
-	echo "auto::headers";\
-	echo "auto::sizes";\
-	echo "auto::byteorder";\
-	echo "auto::va_ptr";\
-	echo "auto::format";\
-	echo "auto::isreg";\
-	echo "auto::arch";\
+	echo "# auto::pmc";\
+	echo "# auto::alignptrs";\
+	echo "# auto::headers";\
+	echo "# auto::sizes";\
+	echo "# auto::byteorder";\
+	echo "# auto::va_ptr";\
+	echo "# auto::format";\
+	echo "# auto::isreg";\
 	echo "auto::jit";\
-	echo "auto::frames";\
-	echo "auto::cpu";\
-	echo "auto::inline";\
+	echo "# auto::frames";\
+	echo "# auto::inline";\
 	echo "auto::gc";\
-	echo "auto::memalign";\
-	echo "auto::signal";\
-	echo "auto::socklen_t";\
-	echo "auto::env";\
-	echo "auto::extra_nci_thunks";\
+	echo "# auto::memalign";\
+	echo "# auto::signal";\
+	echo "# auto::socklen_t";\
+	echo "# auto::neg_0";\
+	echo "# auto::thread";\
+	echo "# auto::env";\
 	echo "# auto::gmp";\
-	echo "auto::readline";\
+	echo "# auto::readline";\
 	echo "# auto::pcre";\
 	echo "# auto::opengl";\
-	echo "auto::gettext";\
-	echo "auto::snprintf";\
-	echo "# auto::perldoc";\
-	echo "# auto::ctags";\
+	echo "# auto::zlib";\
+	echo "# auto::gettext";\
+	echo "# auto::snprintf";\
+	echo "auto::perldoc";\
+	echo "auto::ctags";\
 	echo "auto::revision";\
 	echo "# auto::icu";\
 	echo "gen::config_h";\
