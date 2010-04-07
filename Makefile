@@ -15,18 +15,22 @@ include $(PROJECT_ROOT)/make/leaf.cfg
 all: HINTS CONFIGURE
 
 HINTS:
-	(echo "package init::hints::$(RTEMS_CPU)";\
+	(echo "package init::hints::$(RTEMS_CPU)_$(RTEMS_BSP);";\
 	 echo ;\
 	 echo "use strict;"; \
 	 echo "use warnings;"; \
 	 echo ;\
 	 echo "sub runstep {"; \
 	 echo "    my ( \$$self, \$$conf ) = @_;"; \
+	 echo "    my \$$libs = \$$conf->data->get('libs');"; \
+	 echo "    # manually override the libraries for now"; \
+	 echo "    \$$libs = ' -lrtemsbsp -lrtemscpu';"; \
+	 echo "    \$$conf->data->set( libs => \$$libs );"; \
 	 echo "}"; \
 	 echo ;\
 	 echo "1;"; \
 	 echo ;\
-         ) >$(RTEMS_CPU)-$(RTEMS_BSP).pm
+         ) >$(RTEMS_CPU)_$(RTEMS_BSP).pm
 
 CONFIGURE:
 	(echo "=variables";\
@@ -37,13 +41,17 @@ CONFIGURE:
 	echo "LD=$(LD)";\
 	echo "NM=$(NM)";\
 	echo "AR=$(AR)";\
+	echo "CFLAGS=$(CFLAGS)";\
 	echo ;\
 	echo "=general";\
+	echo ;\
 	echo "cc=\$$CC";\
 	echo "cxx=\$$CXX";\
+	echo "link=\$$CXX";\
 	echo "ld=\$$LD";\
+	echo "ccflags=\$$CFLAGS";\
 	echo "verbose";\
-	echo "hintsfile=$(RTEMS_CPU)-$(RTEMS_BSP)";\
+	echo "hintsfile=$(RTEMS_CPU)_$(RTEMS_BSP)";\
 	echo ;\
 	echo "=steps";\
 	echo ;\
@@ -52,14 +60,14 @@ CONFIGURE:
 	echo "init::install";\
 	echo "init::hints verbose-step";\
 	echo "init::headers";\
-	echo "inter::progs verbose-step";\
+	echo "# inter::progs";\
 	echo "inter::make";\
 	echo "inter::lex";\
 	echo "inter::yacc";\
-	echo "auto::gcc";\
+	echo "# auto::gcc";\
 	echo "auto::glibc";\
 	echo "auto::backtrace";\
-	echo "auto::fink";\
+	echo "# auto::fink";\
 	echo "# auto::macports";\
 	echo "# auto::msvc";\
 	echo "auto::attributes";\
@@ -110,5 +118,5 @@ CONFIGURE:
 	) >rtems_parrot_config_directives
 
 realclean:
-	rm -f $(RTEMS_CPU)-$(RTEMS_BSP).pm
+	rm -f $(RTEMS_CPU)_$(RTEMS_BSP).pm
 	rm -f rtems_parrot_config_directives

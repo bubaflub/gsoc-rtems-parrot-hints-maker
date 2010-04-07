@@ -5,7 +5,7 @@ Bob Kuo
 
 This Makefile will pull all the needed information from an installed RTEMS system and generate:
 
-  * a Parrot hints file (named after your target CPU and BSP, e.g. "sparc-sis.pm") 
+  * a Parrot hints file (named after your target CPU and BSP, e.g. "sparc_sis.pm") 
   * a "parrot_rtems_config_directives" file which contains all the directives for Parrot's Configure.pl script.
 
 USAGE
