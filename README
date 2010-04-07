@@ -1,0 +1,6 @@
+Parrot on RTEMS - Parrot compiler hints maker
+
+For Google Summer of Code 2010
+Bob Kuo
+
+This Makefile will pull all the needed information from an installed RTEMS system and generate a Parrot compiler hints file.
