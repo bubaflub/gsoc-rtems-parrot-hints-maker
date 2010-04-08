@@ -24,18 +24,21 @@ HINTS:
 	 echo "    my ( \$$self, \$$conf ) = @_;"; \
 	 echo "    # override parts of init::defaults"; \
 	 echo "    \$$conf->data->set("; \
-	 echo "        libs => ' -lpthread -lrtemsbsp -lrtemscpu ',"; \
+	 echo "        libs => ' -lrtemsbsp -lrtemscpu ',"; \
 	 echo "        as => '$(AS)',"; \
 	 echo "        link => '$(CXX)',"; \
 	 echo "        ld => '$(LD)',"; \
 	 echo "        cflags => '$(CFLAGS)',"; \
-	 echo "        linkflags => '$(LINKFLAGS)',"; \
-	 echo "        ldflags => '$(LDFLAGS)',"; \
+	 echo "        #linkflags => '$(LINKFLAGS)',"; \
+	 echo "        #linkflags => ' -L/usr/local/lib -Wl,-E',"; \
+	 echo "        linkflags => ' -L/usr/local/lib',"; \
+	 echo "        #ldflags => '$(LDFLAGS)',"; \
+	 echo "        ldflags => ' -L/usr/local/lib',"; \
 	 echo "    );"; \
 	 echo "    # set os specific information, corresponds to auto::arch"; \
 	 echo "    \$$conf->data->set("; \
 	 echo "        cpuarch => '$(RTEMS_CPU)',"; \
-	 echo "        osname => '$(RTEMS_BSP)',"; \
+	 echo "        osname => 'RTEMS',"; \
 	 echo "        TEMP_atomic_o => '',"; \
 	 echo "        platform => 'generic',"; \
 	 echo "    );"; \
@@ -52,19 +55,19 @@ HINTS:
 	 echo "        float8_t => 'double',"; \
 	 echo "        intvalmin => 'LONG_MIN',"; \
 	 echo "        intvalmax => 'LONG_MAX',"; \
-	 echo "        intvalsize => 8,"; \
+	 echo "        intvalsize => 4,"; \
 	 echo "        floatvalmin => 'DBL_MIN',"; \
 	 echo "        floatvalmax => 'DBL_MAX',"; \
-	 echo "        hugeintval => 'long',"; \
+	 echo "        hugeintval => 'long long',"; \
 	 echo "        hugeintvalsize => 8,"; \
 	 echo "        hugefloatval => 'long double',"; \
 	 echo "        hugefloatvalsize => 16,"; \
-	 echo "        opcode_t_size => 8,"; \
-	 echo "        ptrsize => 8,"; \
+	 echo "        opcode_t_size => 4,"; \
+	 echo "        ptrsize => 4,"; \
 	 echo "        shortsize => 2,"; \
 	 echo "        intsize => 4,"; \
 	 echo "        doublesize => 8,"; \
-	 echo "        longsize => 8,"; \
+	 echo "        longsize => 4,"; \
 	 echo "        numvalsize => 8,"; \
 	 echo "    );"; \
 	 echo "    # set number format, corresponds to auto::format"; \
@@ -76,7 +79,7 @@ HINTS:
 	 echo "    # set endian information, corresponds to auto::byteorder"; \
 	 echo "    \$$conf->data->set("; \
 	 echo "        bigendian => 1,"; \
-	 echo "        byteorder => '87654321'"; \
+	 echo "        byteorder => '1234'"; \
 	 echo "    );"; \
 	 echo "    # disable ICU, corresponds to auto::icu"; \
 	 echo "    \$$conf->data->set("; \
@@ -97,7 +100,7 @@ HINTS:
 	 echo "    \$$conf->data->set( cc_build_call_frames  => '');"; \
 	 echo "    # set memory information, corresponds to auto::memalign"; \
 	 echo "    \$$conf->data->set("; \
-	 echo "        memalign => 'memalign',"; \
+	 echo "        memalign => 'posix_memalign',"; \
 	 echo "        ptrcast => 'long',"; \
 	 echo "    );"; \
 	 echo "    # set isreg information, corresponds to auto::isreg"; \
