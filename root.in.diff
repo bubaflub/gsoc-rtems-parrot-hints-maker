@@ -1,0 +1,93 @@
+Index: config/gen/makefiles/root.in
+===================================================================
+--- config/gen/makefiles/root.in	(revision 47628)
++++ config/gen/makefiles/root.in	(working copy)
+@@ -835,11 +835,12 @@
+     runtime/parrot/include/datatypes.pasm $(MINIPARROT)
+ 	$(MINIPARROT) -Iruntime/parrot/include config_lib.pir > $@
+ 
+-$(PARROT) : src/main$(O) $(GEN_HEADERS) $(LIBPARROT) \
++$(PARROT) : src/parrot_main$(O) $(GEN_HEADERS) $(LIBPARROT) \
+     src/parrot_config$(O) \
+     $(MINIPARROT)
+ 	$(LINK) @ld_out@$@ \
+-	src/main$(O) src/parrot_config$(O) \
++	src/parrot_main$(O) src/parrot_config$(O) src/init$(O) \
++	src/main$(O) src/pc386-gdb$(O) \
+ 	@rpath_blib@ $(ALL_PARROT_LIBS) $(LINKFLAGS) $(LINK_DYNAMIC)
+ #IF(win32):	if exist $@.manifest mt.exe -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+@@ -863,17 +864,17 @@
+ 	$(PARROT) -o parrot_config.pbc tools/util/parrot-config.pir
+ 	$(PARROT) pbc_to_exe.pbc parrot_config.pbc
+ 
+-$(MINIPARROT) : src/main$(O) $(GEN_HEADERS) $(LIBPARROT) \
++$(MINIPARROT) : src/parrot_main$(O) $(GEN_HEADERS) $(LIBPARROT) \
+     src/null_config$(O)
+-	$(LINK) @ld_out@$@ src/main$(O) src/null_config$(O) \
++	$(LINK) @ld_out@$@ src/parrot_main$(O) src/null_config$(O) \
+ 	@rpath_blib@ $(ALL_PARROT_LIBS) $(LINKFLAGS)
+ #IF(win32):	if exist $@.manifest mt.exe -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+-$(INSTALLABLEPARROT) : src/main$(O) $(GEN_HEADERS) $(LIBPARROT) \
++$(INSTALLABLEPARROT) : src/parrot_main$(O) $(GEN_HEADERS) $(LIBPARROT) \
+     src/install_config$(O) \
+     $(PARROT)
+ 	$(LINK) @ld_out@$@ \
+-    src/main$(O) src/install_config$(O) \
++    src/parrot_main$(O) src/install_config$(O) \
+     @rpath_lib@ $(ALL_PARROT_LIBS) $(LINKFLAGS)
+ #IF(win32):	if exist $@.manifest mt.exe -nologo -manifest $@.manifest -outputresource:$@;1
+ 
+@@ -906,6 +907,12 @@
+ 
+ src/null_config$(O) : $(PARROT_H_HEADERS) src/null_config.c
+ 
++src/init$(O) : $(PARROT_H_HEADERS) src/init.c
++
++src/main$(O) : $(PARROT_H_HEADERS) src/main.c
++
++src/pc386-gdb$(O) : $(PARROT_H_HEADERS) src/pc386-gdb.c
++
+ src/oo$(O) : $(PARROT_H_HEADERS) include/pmc/pmc_class.h src/oo.c \
+     include/pmc/pmc_object.h src/oo.str $(INC_DIR)/oo_private.h
+ 
+@@ -1426,9 +1433,9 @@
+ 
+ src/gc/alloc_memory$(O) : $(PARROT_H_HEADERS) src/gc/alloc_memory.c
+ 
+-src/main$(O) : $(INC_DIR)/imcc.h $(PARROT_H_HEADERS) \
++src/parrot_main$(O) : $(INC_DIR)/imcc.h $(PARROT_H_HEADERS) \
+ 	$(INC_DIR)/embed.h $(INC_DIR)/runcore_api.h src/gc/gc_private.h \
+-	src/main.c
++	src/parrot_main.c
+ 
+ src/multidispatch$(O) : \
+ 	src/multidispatch.c \
+@@ -1877,7 +1884,7 @@
+     $(PBC_MERGE) src/pbc_merge$(O) \
+     $(DIS) src/pbc_disassemble$(O)
+ 	$(RM_F) \
+-    src/main$(O) \
++    src/parrot_main$(O) \
+     src/null_config$(O) \
+     src/parrot_config$(O) \
+     src/install_config$(O) \
+@@ -2031,7 +2038,7 @@
+ patch :
+ 	svn diff
+ 
+-LINTABLE_CFILES = `echo src/main$(O) $(O_FILES) src/parrot_config$(O) | $(PERL) -pe @PQ@s/\.o/\.c/g@PQ@`
++LINTABLE_CFILES = `echo src/parrot_main$(O) $(O_FILES) src/parrot_config$(O) | $(PERL) -pe @PQ@s/\.o/\.c/g@PQ@`
+ 
+ lint : sunlint
+ 
+@@ -2531,7 +2538,7 @@
+ 
+ HEADERIZER_O_FILES = \
+     $(O_FILES) \
+-    src/main$(O) \
++    src/parrot_main$(O) \
+     src/packdump$(O) \
+     src/pbc_merge$(O) \
+     $(PIRC_O_FILES)

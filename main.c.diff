@@ -1,0 +1,59 @@
+Index: src/main.c
+===================================================================
+--- src/main.c	(revision 47717)
++++ src/main.c	(working copy)
+@@ -19,6 +19,7 @@
+ */
+ 
+ #include <stdio.h>
++#include <setjmp.h>
+ 
+ #include "parrot/parrot.h"
+ #include "parrot/embed.h"
+@@ -92,6 +93,17 @@
+ /* Don't modify between HEADERIZER BEGIN / HEADERIZER END.  Your changes will be lost. */
+ /* HEADERIZER END: static */
+ 
++static jmp_buf shell_parrot_exit_jmp;
++static int shell_parrot_exit_status;
++static Interp* Parent_Interp;
++
++void
++Parrot_rtems_exit (int status)
++{
++    shell_parrot_exit_status = status;
++    longjmp (shell_parrot_exit_jmp, 1);
++}
++
+ /*
+ 
+ =item C<int main(int argc, const char *argv[])>
+@@ -103,7 +115,7 @@
+ */
+ 
+ int
+-main(int argc, const char *argv[])
++shell_parrot_main(int argc, char * argv[])
+ {
+     int          stacktop;
+     const char  *sourcefile;
+@@ -143,14 +155,17 @@
+     Parrot_set_run_core(interp, (Parrot_Run_core_t) core);
+     Parrot_set_executable_name(interp, Parrot_str_new(interp, execname, 0));
+ 
+-    status = imcc_run(interp, sourcefile, argc, argv);
++    if (setjmp (shell_parrot_exit_jmp) == 0)
++        status = imcc_run(interp, sourcefile, argc, argv);
++    else
++        status = shell_parrot_exit_status;
+ 
+     if (status)
+         imcc_run_pbc(interp, interp->output_file, pir_argc, pir_argv);
+ 
+     /* Clean-up after ourselves */
+     Parrot_destroy(interp);
+-    Parrot_exit(interp, 0);
++    return status;
+ }
+ 
+ #define SET_FLAG(flag)   Parrot_set_flag(interp, (flag))
