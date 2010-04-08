@@ -1,3 +1,11 @@
-* have a clean configure
-* have a clean build
-* switch to use autoconf instead of make and makefiles
+* get parrot executable to load on qemu and run in i386-rtems4.10-gdb
+* finish bootstrapping instead of just building miniparrot
+* have main.c load dynops
+* load and run parrot test suite into qemu
+
+In no particular order:
+
+* switch to use perl instead of make and makefiles
+* have complete automated build process
+* setup separate virtual box image for RTEMS
+* patch parrot to allow out of directory building

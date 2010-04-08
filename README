@@ -10,9 +10,22 @@ This Makefile will pull all the needed information from an installed RTEMS syste
 
 USAGE
 
-1) Copy your Parrot hints file into the Parrot source under config/init/hints/.
-2) At the top of the Parrot source directory, run:
+1) Grab a copy of parrot and compile for local development system
+2) In a separate directory, grab another copy of the parrot source for RTEMS
+3) Patch the following files in that source:
+   * src/main.c
+   * config/gen/makefiles/root.in
+   * src/io/socket_api.c
+4) Shuffle some source files:
+   * mv parrot_rtems/src/main.c parrot_rtems/src/parrot_main.c
+   * mv hints_maker/main.c parrot_rtems/src/main.c
+   * mv hints_maker/init.c parrot_rtems/src/init.c
+   * mv hints_maker/pc386-gdb.* parrot_rtems/src/
+5) Run Make to generate the hints file and configuration steps (Make sure that $RTEMS_MAKEFILE_PATH is set correctly)
+6) Copy your Parrot hints file into the Parrot source under config/init/hints/.
+7) At the top of the Parrot source directory, run:
 
   perl Configure.pl --file=/path/to/parrot_rtems_config_directives
 
 Replacing /path/to/ with the actual path.
+8) Run make miniparrot
