@@ -22,8 +22,16 @@ HINTS:
 	 echo ;\
 	 echo "sub runstep {"; \
 	 echo "    my ( \$$self, \$$conf ) = @_;"; \
-	 echo "    # set rtems lib"; \
-	 echo "    \$$conf->data->set( libs => ' -lrtemsbsp -lrtemscpu' );"; \
+	 echo "    # override parts of init::defaults"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        libs => ' -lpthread -lrtemsbsp -lrtemscpu ',"; \
+	 echo "        as => '$(AS)',"; \
+	 echo "        link => '$(CXX)',"; \
+	 echo "        ld => '$(LD)',"; \
+	 echo "        cflags => '$(CFLAGS)',"; \
+	 echo "        linkflags => '$(LINKFLAGS)',"; \
+	 echo "        ldflags => '$(LDFLAGS)',"; \
+	 echo "    );"; \
 	 echo "    # set os specific information, corresponds to auto::arch"; \
 	 echo "    \$$conf->data->set("; \
 	 echo "        cpuarch => '$(RTEMS_CPU)',"; \
@@ -68,7 +76,7 @@ HINTS:
 	 echo "    # set endian information, corresponds to auto::byteorder"; \
 	 echo "    \$$conf->data->set("; \
 	 echo "        bigendian => 1,"; \
-	 echo "        byteorder => '4321'"; \
+	 echo "        byteorder => '87654321'"; \
 	 echo "    );"; \
 	 echo "    # disable ICU, corresponds to auto::icu"; \
 	 echo "    \$$conf->data->set("; \
@@ -122,13 +130,110 @@ HINTS:
 	 echo "    );"; \
 	 echo "    # set backtrace information, corresponds to auto::backtrace"; \
 	 echo "    \$$conf->data->set("; \
-	 echo "        PARROT_HAS_DLINFO => 1 ,"; \
-	 echo "        backtrace => 1,"; \
+	 echo "        PARROT_HAS_DLINFO => undef,"; \
+	 echo "        backtrace => undef,"; \
 	 echo "    );"; \
 	 echo "    # set negative zero information,"; \
 	 echo "    # corresponds to auto::neg_0"; \
 	 echo "    \$$conf->data->set("; \
 	 echo "        has_negative_zero => 0,"; \
+	 echo "    );"; \
+	 echo "    # set thread information, corresponds to auto::thread"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        HAS_THREADS => 1,"; \
+	 echo "    );"; \
+	 echo "    # set glibc information, corresponds to auto::glibc"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        glibc => 'newlib',"; \
+	 echo "    );"; \
+	 echo "    # set header information, corresponds to auto::headers"; \
+	 echo "    \$$conf->data->set("; \
+	 echo "        i_arpainet => 'define',"; \
+	 echo "        i_bsdioctl => '',"; \
+	 echo "        i_crypt => undef,"; \
+	 echo "        i_db => 'define',"; \
+	 echo "        i_dbm => undef,"; \
+	 echo "        i_dirent => 'define',"; \
+	 echo "        i_dld => undef,"; \
+	 echo "        i_dlfcn => undef,"; \
+	 echo "        i_fcntl => 'define',"; \
+	 echo "        i_float => 'define',"; \
+	 echo "        i_fp => undef,"; \
+	 echo "        i_fp_class => undef,"; \
+	 echo "        i_gdbm => undef,"; \
+	 echo "        i_grp => 'define',"; \
+	 echo "        i_ieeefp => undef,"; \
+	 echo "        i_inttypes => 'define',"; \
+	 echo "        i_langinfo => 'define',"; \
+	 echo "        i_libutil => undef,"; \
+	 echo "        i_limits => 'define',"; \
+	 echo "        i_locale => 'define',"; \
+	 echo "        i_machcthr => undef,"; \
+	 echo "        i_malloc => 'define',"; \
+	 echo "        i_math => 'define',"; \
+	 echo "        i_memory => undef,"; \
+	 echo "        i_mntent => undef,"; \
+	 echo "        i_ndbm => 'define',"; \
+	 echo "        i_netdb => 'define',"; \
+	 echo "        i_neterrno => undef,"; \
+	 echo "        i_netinetin => 'define',"; \
+	 echo "        i_netinettcp => 'define',"; \
+	 echo "        i_poll => undef,"; \
+	 echo "        i_prot => undef,"; \
+	 echo "        i_pthread => 'define',"; \
+	 echo "        i_pwd => 'define',"; \
+	 echo "        i_rpcsvcdbm => undef,"; \
+	 echo "        i_setjmp => 'define',"; \
+	 echo "        i_sfio => undef,"; \
+	 echo "        i_sgtty => undef,"; \
+	 echo "        i_shadow => undef,"; \
+	 echo "        i_signal => 'define',"; \
+	 echo "        i_socks => undef,"; \
+	 echo "        i_stdarg => 'define',"; \
+	 echo "        i_stddef => 'define',"; \
+	 echo "        i_stdlib => 'define',"; \
+	 echo "        i_string => 'define',"; \
+	 echo "        i_sunmath => undef,"; \
+	 echo "        i_sysaccess => undef,"; \
+	 echo "        i_sysdir => 'define',"; \
+	 echo "        i_sysexit => 'define',"; \
+	 echo "        i_sysfile => 'define',"; \
+	 echo "        i_sysfilio => 'define',"; \
+	 echo "        i_sysin => undef,"; \
+	 echo "        i_sysioctl => 'define',"; \
+	 echo "        i_syslog => 'define',"; \
+	 echo "        i_sysmman => undef,"; \
+	 echo "        i_sysmode => undef,"; \
+	 echo "        i_sysmount => 'define',"; \
+	 echo "        i_sysndir => undef,"; \
+	 echo "        i_sysparam => 'define',"; \
+	 echo "        i_sysresrc => 'define',"; \
+	 echo "        i_syssecrt => undef,"; \
+	 echo "        i_sysselct => 'define',"; \
+	 echo "        i_syssocket => 'define',"; \
+	 echo "        i_syssockio => 'define',"; \
+	 echo "        i_sysstat => 'define',"; \
+	 echo "        i_sysstatfs => undef,"; \
+	 echo "        i_sysstatvfs => 'define',"; \
+	 echo "        i_systime => 'define',"; \
+	 echo "        i_systimek => undef,"; \
+	 echo "        i_systimes => 'define',"; \
+	 echo "        i_systypes => 'define',"; \
+	 echo "        i_sysuio => 'define',"; \
+	 echo "        i_sysun => 'define',"; \
+	 echo "        i_sysutsname => 'define',"; \
+	 echo "        i_sysvfs => undef,"; \
+	 echo "        i_syswait => 'define',"; \
+	 echo "        i_termio => undef,"; \
+	 echo "        i_termios => 'define',"; \
+	 echo "        i_time => undef,"; \
+	 echo "        i_unistd => 'define',"; \
+	 echo "        i_ustat => undef,"; \
+	 echo "        i_utime => 'define',"; \
+	 echo "        i_values => undef,"; \
+	 echo "        i_varargs => undef,"; \
+	 echo "        i_varhdr => 'stdarg.h',"; \
+	 echo "        i_vfork => undef,"; \
 	 echo "    );"; \
 	 echo "}"; \
 	 echo ;\
@@ -187,7 +292,6 @@ CONFIGURE:
 	echo ;\
 	echo "cc=\$$CC";\
 	echo "cxx=\$$CXX";\
-	echo "link=\$$CXX";\
 	echo "ld=\$$LD";\
 	echo "ccflags=\$$CFLAGS";\
 	echo "hintsfile=$(RTEMS_CPU)_$(RTEMS_BSP)";\
