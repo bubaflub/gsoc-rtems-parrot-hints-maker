@@ -1,0 +1,26 @@
+Index: src/io/socket_api.c
+===================================================================
+--- src/io/socket_api.c	(revision 47717)
++++ src/io/socket_api.c	(working copy)
+@@ -45,15 +45,15 @@
+  */
+ 
+ static int pio_pf[PIO_PF_MAX+1] = {
+-#ifdef PF_LOCAL
+-    PF_LOCAL,   /* PIO_PF_LOCAL */
++#ifdef AF_LOCAL
++    AF_LOCAL,   /* PIO_AF_LOCAL */
+ #else
+-    -1,         /* PIO_PF_LOCAL */
++    -1,         /* PIO_AF_LOCAL */
+ #endif
+-#ifdef PF_UNIX
+-    PF_UNIX,    /* PIO_PF_UNIX */
++#ifdef AF_UNIX
++    AF_UNIX,    /* PIO_AF_UNIX */
+ #else
+-    -1,         /* PIO_PF_UNIX */
++    -1,         /* PIO_AF_UNIX */
+ #endif
+ #ifdef PF_INET
+     PF_INET,    /* PIO_PF_INET */
