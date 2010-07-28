@@ -72,43 +72,34 @@ index c4ed805..9b79150 100644
      if ( -f $hints_file ) {
          my $hints_pkg = "init::hints::" . $hints_file_name;
 diff --git config/init/manifest.pm config/init/manifest.pm
-index e402cef..8c9e1c9 100644
+index e402cef..2096f9c 100644
 --- config/init/manifest.pm
 +++ config/init/manifest.pm
 @@ -21,6 +21,7 @@ use base qw(Parrot::Configure::Step);
  use Parrot::Configure::Step;
  use Parrot::Configure::Utils ':gen';
  use ExtUtils::Manifest qw(manicheck);
-+use Cwd;
++use Cwd qw(chdir);
  
  
  sub _init {
-@@ -39,8 +40,10 @@ sub runstep {
-         $self->set_result('skipped');
+@@ -40,7 +41,11 @@ sub runstep {
          return 1;
      }
--
-+    my $cwd = getcwd();
-+    chdir $conf->options->get('source_dir');
+ 
++    chdir($conf->options->get('source_dir'));
      my @missing = ExtUtils::Manifest::manicheck();
-+    chdir $cwd;
++    # The following would avoid a chdir but doesn't work:
++    # $ExtUtils::Manifest::MANIFEST = File::Spec->catfile($conf->options->get('source_dir'), 'MANIFEST');
++    # my @missing = ExtUtils::Manifest::_check_files($conf->options->get('source_dir'));
  
      if (@missing) {
          print <<"END";
 diff --git lib/Parrot/BuildUtil.pm lib/Parrot/BuildUtil.pm
-index f2dfb51..7397b46 100644
+index f2dfb51..cd51844 100644
 --- lib/Parrot/BuildUtil.pm
 +++ lib/Parrot/BuildUtil.pm
-@@ -5,6 +5,8 @@ package Parrot::BuildUtil;
- 
- use strict;
- use warnings;
-+use FindBin qw($Bin);
-+use File::Spec;
- 
- =head1 NAME
- 
-@@ -40,10 +42,9 @@ sub parrot_version {
+@@ -40,17 +40,16 @@ sub parrot_version {
      if ( defined $parrot_version ) {
          return wantarray ? @parrot_version : $parrot_version;
      }
@@ -116,13 +107,21 @@ index f2dfb51..7397b46 100644
      # Obtain the official version number from the VERSION file.
 -    if (-e 'VERSION') {
 -        open my $VERSION, '<', 'VERSION' or die 'Could not open VERSION file!';
-+    if (-e File::Spec->catfile($Bin, "VERSION")) {
-+        open my $VERSION, '<', File::Spec->catfile($Bin, "VERSION") or die "Could not open VERSION file!";
++    if (-e "VERSION") {
++        open my $VERSION, '<', "VERSION" or die "Could not open VERSION file!";
+         chomp( $parrot_version = <$VERSION> );
+         close $VERSION or die $!;
+     }
+     else { # we're in an installed copy of Parrot
+         my $path = shift;
+         $path = '' unless $path;
+-        open my $VERSION, '<', "$path/VERSION" or die 'Could not open VERSION file!';
++        open my $VERSION, '<', "$path/VERSION" or die "Could not open $path/VERSION file!";
          chomp( $parrot_version = <$VERSION> );
          close $VERSION or die $!;
      }
 diff --git lib/Parrot/Configure.pm lib/Parrot/Configure.pm
-index 819bd23..aef23db 100644
+index 819bd23..3b20687 100644
 --- lib/Parrot/Configure.pm
 +++ lib/Parrot/Configure.pm
 @@ -38,8 +38,9 @@ This module accepts no arguments to its C<import> method and exports no
@@ -137,21 +136,54 @@ index 819bd23..aef23db 100644
  use Carp qw(carp);
  use Storable qw(2.12 nstore retrieve nfreeze thaw);
  use Parrot::Configure::Data;
+@@ -375,6 +376,11 @@ sub _run_this_step {
+ 
+     my $step_name   = $args->{task}->step;
+ 
++    my @dir = File::Spec->splitdir($Bin);
++    if ($dir[-2] eq 't') {
++        eval "use lib qw(" . File::Spec->catdir(@dir[0..$#dir - 2], 'config') . ");";
++    }
++
+     eval "use $step_name;"; ## no critic (BuiltinFunctions::ProhibitStringyEval)
+     die $@ if $@;
+ 
 diff --git lib/Parrot/Configure/Compiler.pm lib/Parrot/Configure/Compiler.pm
-index 8609775..9f435b7 100644
+index 8609775..df8c056 100644
 --- lib/Parrot/Configure/Compiler.pm
 +++ lib/Parrot/Configure/Compiler.pm
-@@ -340,7 +340,7 @@ sub genfile {
+@@ -333,6 +333,7 @@ syntax works ok.
+ 
+ sub genfile {
+     my $conf = shift;
++    my $source_dir = $conf->options->get('source_dir');
+     my ( $source, $target, %options ) = @_;
+ 
+     my $calling_sub = (caller(1))[3] || q{};
+@@ -340,7 +341,7 @@ sub genfile {
          $conf->append_configure_log($target);
      }
  
 -    open my $in,  '<', $source       or die "Can't open $source: $!";
-+    open my $in,  '<', (File::Spec->catfile($conf->options->get('source_dir'),$source))       or die "Can't open $source: $!";
++    open my $in,  '<', ($source_dir ? File::Spec->catfile($source_dir,$source) : $source)       or die "Can't open $source: $!";
      open my $out, '>', "$target.tmp" or die "Can't open $target.tmp: $!";
  
      if ( !exists $options{file_type}) {
+diff --git lib/Parrot/Configure/Options/Conf.pm lib/Parrot/Configure/Options/Conf.pm
+index c3a58f9..02328d0 100644
+--- lib/Parrot/Configure/Options/Conf.pm
++++ lib/Parrot/Configure/Options/Conf.pm
+@@ -17,7 +17,7 @@ use Parrot::BuildUtil ();
+ use FindBin qw($Bin);
+ 
+ our $script         = q{Configure.pl};
+-our $parrot_version = Parrot::BuildUtil::parrot_version("$Bin/../../");
++our $parrot_version = Parrot::BuildUtil::parrot_version($Bin);
+ our $svnid          = '$Id$';
+ 
+ sub print_version {
 diff --git lib/Parrot/Configure/Options/Test/Prepare.pm lib/Parrot/Configure/Options/Test/Prepare.pm
-index 7f73011..26a7580 100644
+index 7f73011..7107b1d 100644
 --- lib/Parrot/Configure/Options/Test/Prepare.pm
 +++ lib/Parrot/Configure/Options/Test/Prepare.pm
 @@ -6,6 +6,8 @@ use warnings;
@@ -163,27 +195,33 @@ index 7f73011..26a7580 100644
  #use Scalar::Util qw( looks_like_number );
  use base qw( Exporter );
  our @EXPORT_OK = qw(
-@@ -15,10 +17,10 @@ our @EXPORT_OK = qw(
+@@ -14,11 +16,15 @@ our @EXPORT_OK = qw(
+ );
  use lib qw(lib);
  use Parrot::Configure::Step::List qw( get_steps_list );
- 
+-
 -my $config_dir = q{t/configure};
-+my $config_dir = File::Spec->catdir($Bin, 't', 'configure');
++my $path = $Bin;
++my @dirs = File::Spec->splitdir($path);
++if ($dirs[-2] eq 't' && $dirs[-1] eq 'configure') {
++  $path = '.';
++}
++my $config_dir = File::Spec->catdir($path, 't', 'configure');
  my @framework_tests = _get_framework_tests($config_dir);
  
 -my $steps_dir = q{t/steps};
-+my $steps_dir = File::Spec->catdir($Bin, 't', 'steps');
++my $steps_dir = File::Spec->catdir($path, 't', 'steps');
  my ( $steps_tests_simple_ref, $steps_tests_complex_ref )  =
      _find_steps_tests($steps_dir);
  my @steps_expected = get_steps_list();
-@@ -35,8 +37,8 @@ sub get_preconfiguration_tests {
+@@ -35,8 +41,8 @@ sub get_preconfiguration_tests {
  sub get_postconfiguration_tests {
      my @postconfiguration_tests = (
          @steps_tests,
 -        glob("t/postconfigure/*.t"),
 -        glob("t/pharness/*.t"),
-+        glob(File::Spec->catfile($Bin, 't', 'postconfigure', '*.t')),
-+        glob(File::Spec->catfile($Bin, 't', 'pharness', '*.t')),
++        glob(File::Spec->catfile($path, 't', 'postconfigure', '*.t')),
++        glob(File::Spec->catfile($path, 't', 'pharness', '*.t')),
      );
      return @postconfiguration_tests;
  };
