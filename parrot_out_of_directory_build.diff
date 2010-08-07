@@ -95,6 +95,29 @@ index e402cef..2096f9c 100644
  
      if (@missing) {
          print <<"END";
+diff --git config/inter/progs.pm config/inter/progs.pm
+index d0b3347..4ddd1d3 100644
+--- config/inter/progs.pm
++++ config/inter/progs.pm
+@@ -21,6 +21,7 @@ use warnings;
+ use base qw(Parrot::Configure::Step);
+ 
+ use Parrot::Configure::Utils ':inter', ':auto';
++use File::Spec;
+ 
+ 
+ sub _init {
+@@ -159,8 +160,8 @@ sub _set_debug_and_warn {
+ 
+ sub test_compiler {
+     my ($conf, $cc) = @_;
+-
+-    open( my $out_fh, '>', "test_$$.c" )
++    my $build_dir = $conf->options->get('build_dir');
++    open( my $out_fh, '>', File::Spec->catfile($build_dir, "test_$$.c") )
+         or die "Unable to open 'test_$$.c': $@\n";
+     print {$out_fh} <<END_C;
+ int main() {
 diff --git lib/Parrot/BuildUtil.pm lib/Parrot/BuildUtil.pm
 index f2dfb51..cd51844 100644
 --- lib/Parrot/BuildUtil.pm
@@ -149,26 +172,104 @@ index 819bd23..3b20687 100644
      die $@ if $@;
  
 diff --git lib/Parrot/Configure/Compiler.pm lib/Parrot/Configure/Compiler.pm
-index 8609775..df8c056 100644
+index 8609775..6c181e9 100644
 --- lib/Parrot/Configure/Compiler.pm
 +++ lib/Parrot/Configure/Compiler.pm
-@@ -333,6 +333,7 @@ syntax works ok.
+@@ -89,6 +89,7 @@ Calls the compiler and linker on F<test_$$.c>.
+ sub cc_build {
+     my $conf = shift;
+     my ( $cc_args, $link_args ) = @_;
++    my $build_dir = $conf->options->get('build_dir');
+ 
+     $cc_args   = '' unless defined $cc_args;
+     $link_args = '' unless defined $link_args;
+@@ -101,16 +102,21 @@ sub cc_build {
+     # unique test file name for parallel builds
+     my $test            = 'test_' . $$;
+     my $compile_command = _build_compile_command( $cc, $ccflags, $cc_args );
+-    my $compile_result  = _run_command( $compile_command, "$test.cco", "$test.cco", $verbose );
++    my $actual_file = File::Spec->catfile($build_dir, $test);
++    $compile_command =~ s/$test/$actual_file/;
++    $compile_command .= " $cc_exe_out$actual_file$o";
++    my $output = "$actual_file.cco";
++    my $compile_result  = _run_command( $compile_command, $output, $output, $verbose );
+ 
+     if ($compile_result) {
+-        confess "C compiler failed (see $test.cco)";
++        confess "C compiler failed (see $actual_file.cco)";
+         return $compile_result;
+     }
+ 
++    $output = "$actual_file.ldo";
+     my $link_result =
+-        _run_command( "$link $linkflags $test$o $link_args ${cc_exe_out}${test}${exe}  $libs",
+-        "$test.ldo", "$test.ldo", $verbose )
++        _run_command( "$link $linkflags $actual_file$o $link_args ${cc_exe_out}${actual_file}${exe}  $libs",
++        $output, $output, $verbose )
+         and confess "Linker failed (see $test.ldo)";
+     if ($link_result) {
+         return $link_result;
+@@ -133,6 +139,7 @@ sub cc_run {
+     my $verbose  = $conf->options->get('verbose');
+     my $test     = 'test_' . $$;
+     my $test_exe = ".${slash}${test}${exe}";
++    my $build_dir = $conf->options->get('build_dir');
+ 
+     my $run_error;
+     if ( defined( $_[0] ) && length( $_[0] ) ) {
+@@ -140,10 +147,10 @@ sub cc_run {
+         $run_error = _run_command( "$test_exe @_", "./$test.out", undef, $verbose );
+     }
+     else {
+-        $run_error = _run_command( $test_exe, "./$test.out", undef, $verbose );
++        $run_error = _run_command( File::Spec->catfile($build_dir, $test_exe), File::Spec->catfile($build_dir, "$test.out"), undef, $verbose );
+     }
+ 
+-    my $output = _slurp("./$test.out");
++    my $output = _slurp(File::Spec->catfile($build_dir, "$test.out"));
+ 
+     return $output;
+ }
+@@ -333,6 +340,8 @@ syntax works ok.
  
  sub genfile {
      my $conf = shift;
 +    my $source_dir = $conf->options->get('source_dir');
++    my $build_dir = $conf->options->get('build_dir');
      my ( $source, $target, %options ) = @_;
  
      my $calling_sub = (caller(1))[3] || q{};
-@@ -340,7 +341,7 @@ sub genfile {
+@@ -340,8 +349,8 @@ sub genfile {
          $conf->append_configure_log($target);
      }
  
 -    open my $in,  '<', $source       or die "Can't open $source: $!";
+-    open my $out, '>', "$target.tmp" or die "Can't open $target.tmp: $!";
 +    open my $in,  '<', ($source_dir ? File::Spec->catfile($source_dir,$source) : $source)       or die "Can't open $source: $!";
-     open my $out, '>', "$target.tmp" or die "Can't open $target.tmp: $!";
++    open my $out, '>', ($build_dir ? File::Spec->catfile($build_dir, "$target.tmp") : "$target.tmp")   or die "Can't open $target.tmp: $!";
  
      if ( !exists $options{file_type}) {
+         if ( $target =~ m/makefile$/i || $target =~ m/\.mak/) {
+@@ -552,7 +561,7 @@ sub genfile {
+     close($in)  or die "Can't close $source: $!";
+     close($out) or die "Can't close $target: $!";
+ 
+-    move_if_diff( "$target.tmp", $target, $options{ignore_pattern} );
++    move_if_diff( File::Spec->catfile($build_dir, "$target.tmp"), File::Spec->catfile($build_dir, $target), $options{ignore_pattern} );
+ }
+ 
+ # Return the next subexpression from the expression in $_[0]
+@@ -673,8 +682,9 @@ sub cond_eval {
+ sub append_configure_log {
+     my $conf = shift;
+     my $target = shift;
++    my $build_dir = $conf->options->get('build_dir');
+     if ( $conf->{active_configuration} ) {
+-        my $generated_log = 'MANIFEST.configure.generated';
++        my $generated_log = File::Spec->catfile($build_dir, 'MANIFEST.configure.generated');
+         open my $GEN, '>>', $generated_log
+             or die "Can't open $generated_log for appending: $!";
+         print $GEN "$target\n";
 diff --git lib/Parrot/Configure/Options/Conf.pm lib/Parrot/Configure/Options/Conf.pm
 index c3a58f9..02328d0 100644
 --- lib/Parrot/Configure/Options/Conf.pm
