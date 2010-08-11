@@ -1,5 +1,5 @@
 diff --git Configure.pl Configure.pl
-index 76e3e67..7560fcf 100644
+index 76e3e67..364dd6d 100644
 --- Configure.pl
 +++ Configure.pl
 @@ -6,9 +6,13 @@
@@ -24,8 +24,8 @@ index 76e3e67..7560fcf 100644
 +# handles out of directory builds
 +my $source_dir = dirname(realpath($0));
 +my $build_dir = $ENV{PWD};
-+$conf->options->set(build_dir => $build_dir);
-+$conf->options->set(source_dir => $source_dir);
++$conf->data->set(build_dir => $build_dir);
++$conf->data->set(source_dir => $source_dir);
  # save the command-line for make reconfig
  $conf->data->set(configure_args => @ARGV ? '"'.join("\" \"", map {qq($_)} @ARGV).'"'
                                           : '');
@@ -37,8 +37,21 @@ index 76e3e67..7560fcf 100644
  
  # Run the actual steps from Parrot::Configure
  $conf->runsteps or exit(1);
+diff --git config/gen/makefiles/root.in config/gen/makefiles/root.in
+index 977b356..13b246b 100644
+--- config/gen/makefiles/root.in
++++ config/gen/makefiles/root.in
+@@ -118,7 +118,7 @@ NONGEN_HEADERS   = @TEMP_nongen_headers@
+ # The headerizer
+ HEADERIZER       = $(PERL) $(BUILD_TOOLS_DIR)/headerizer.pl
+ 
+-include src/dynpmc/Defines.mak
++include @source_dir@src/dynpmc/Defines.mak
+ include src/dynoplibs/Defines.mak
+ include compilers/imcc/Defines.mak
+ include compilers/pirc/Defines.mak
 diff --git config/init/headers.pm config/init/headers.pm
-index b7c0128..9c83352 100644
+index b7c0128..ae348af 100644
 --- config/init/headers.pm
 +++ config/init/headers.pm
 @@ -16,6 +16,7 @@ package init::headers;
@@ -54,12 +67,12 @@ index b7c0128..9c83352 100644
      my ( $self, $conf ) = @_;
  
 -    my $inc = 'include/parrot';
-+    my $inc = File::Spec->catdir($conf->options->get('source_dir'), 'include/parrot');
++    my $inc = File::Spec->catdir($conf->data->get('source_dir'), 'include/parrot');
  
      my @headers = (
          sort
 diff --git config/init/hints.pm config/init/hints.pm
-index c4ed805..9b79150 100644
+index c4ed805..28cc51b 100644
 --- config/init/hints.pm
 +++ config/init/hints.pm
 @@ -40,7 +40,7 @@ sub runstep {
@@ -67,12 +80,12 @@ index c4ed805..9b79150 100644
  
      my $hints_file_name = $conf->options->get('hintsfile') || $osname ;
 -    $hints_file = catfile('config', 'init', 'hints', "$hints_file_name.pm");
-+    $hints_file = catfile($conf->options->get('source_dir'), 'config', 'init', 'hints', "$hints_file_name.pm");
++    $hints_file = catfile($conf->data->get('source_dir'), 'config', 'init', 'hints', "$hints_file_name.pm");
  
      if ( -f $hints_file ) {
          my $hints_pkg = "init::hints::" . $hints_file_name;
 diff --git config/init/manifest.pm config/init/manifest.pm
-index e402cef..2096f9c 100644
+index e402cef..bae192e 100644
 --- config/init/manifest.pm
 +++ config/init/manifest.pm
 @@ -21,6 +21,7 @@ use base qw(Parrot::Configure::Step);
@@ -87,7 +100,7 @@ index e402cef..2096f9c 100644
          return 1;
      }
  
-+    chdir($conf->options->get('source_dir'));
++    chdir($conf->data->get('source_dir'));
      my @missing = ExtUtils::Manifest::manicheck();
 +    # The following would avoid a chdir but doesn't work:
 +    # $ExtUtils::Manifest::MANIFEST = File::Spec->catfile($conf->options->get('source_dir'), 'MANIFEST');
@@ -96,7 +109,7 @@ index e402cef..2096f9c 100644
      if (@missing) {
          print <<"END";
 diff --git config/inter/progs.pm config/inter/progs.pm
-index d0b3347..4ddd1d3 100644
+index d0b3347..f70707c 100644
 --- config/inter/progs.pm
 +++ config/inter/progs.pm
 @@ -21,6 +21,7 @@ use warnings;
@@ -113,7 +126,7 @@ index d0b3347..4ddd1d3 100644
      my ($conf, $cc) = @_;
 -
 -    open( my $out_fh, '>', "test_$$.c" )
-+    my $build_dir = $conf->options->get('build_dir');
++    my $build_dir = $conf->data->get('build_dir');
 +    open( my $out_fh, '>', File::Spec->catfile($build_dir, "test_$$.c") )
          or die "Unable to open 'test_$$.c': $@\n";
      print {$out_fh} <<END_C;
@@ -172,7 +185,7 @@ index 819bd23..3b20687 100644
      die $@ if $@;
  
 diff --git lib/Parrot/Configure/Compiler.pm lib/Parrot/Configure/Compiler.pm
-index 8609775..79f5a92 100644
+index 8609775..f2de4ee 100644
 --- lib/Parrot/Configure/Compiler.pm
 +++ lib/Parrot/Configure/Compiler.pm
 @@ -25,7 +25,9 @@ use warnings;
@@ -190,7 +203,7 @@ index 8609775..79f5a92 100644
  sub cc_build {
      my $conf = shift;
      my ( $cc_args, $link_args ) = @_;
-+    my $build_dir = $conf->options->get('build_dir');
++    my $build_dir = $conf->data->get('build_dir');
  
      $cc_args   = '' unless defined $cc_args;
      $link_args = '' unless defined $link_args;
@@ -224,7 +237,7 @@ index 8609775..79f5a92 100644
      my $verbose  = $conf->options->get('verbose');
      my $test     = 'test_' . $$;
      my $test_exe = ".${slash}${test}${exe}";
-+    my $build_dir = $conf->options->get('build_dir');
++    my $build_dir = $conf->data->get('build_dir');
  
      my $run_error;
      if ( defined( $_[0] ) && length( $_[0] ) ) {
@@ -245,8 +258,8 @@ index 8609775..79f5a92 100644
  
  sub genfile {
      my $conf = shift;
-+    my $source_dir = $conf->options->get('source_dir');
-+    my $build_dir = $conf->options->get('build_dir');
++    my $source_dir = $conf->data->get('source_dir');
++    my $build_dir = $conf->data->get('build_dir');
      my ( $source, $target, %options ) = @_;
  
      my $calling_sub = (caller(1))[3] || q{};
@@ -279,7 +292,7 @@ index 8609775..79f5a92 100644
  sub append_configure_log {
      my $conf = shift;
      my $target = shift;
-+    my $build_dir = $conf->options->get('build_dir');
++    my $build_dir = $conf->data->get('build_dir');
      if ( $conf->{active_configuration} ) {
 -        my $generated_log = 'MANIFEST.configure.generated';
 +        my $generated_log = File::Spec->catfile($build_dir, 'MANIFEST.configure.generated');
