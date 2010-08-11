@@ -37,6 +37,66 @@ index 76e3e67..364dd6d 100644
  
  # Run the actual steps from Parrot::Configure
  $conf->runsteps or exit(1);
+diff --git config/gen/makefiles/root.in config/gen/makefiles/root.in
+index 977b356..dcc191c 100644
+--- config/gen/makefiles/root.in
++++ config/gen/makefiles/root.in
+@@ -48,7 +48,7 @@ VERSION_DIR     = @versiondir@
+ BUILD_DIR = @build_dir@
+ 
+ # directory for build tools
+-BUILD_TOOLS_DIR = tools/build
++BUILD_TOOLS_DIR = @source_dir@@slash@tools/build
+ 
+ # directory for header files
+ INC_DIR         = @inc@
+@@ -120,14 +120,14 @@ HEADERIZER       = $(PERL) $(BUILD_TOOLS_DIR)/headerizer.pl
+ 
+ include src/dynpmc/Defines.mak
+ include src/dynoplibs/Defines.mak
+-include compilers/imcc/Defines.mak
+-include compilers/pirc/Defines.mak
+-include compilers/tge/Defines.mak
+-include compilers/pge/Defines.mak
+-include compilers/pct/Defines.mak
+-include compilers/opsc/Defines.mak
+-include ext/nqp-rx/Defines.mak
+-include compilers/data_json/Defines.mak
++include @source_dir@@slash@compilers/imcc/Defines.mak
++include @source_dir@@slash@compilers/pirc/Defines.mak
++include @source_dir@@slash@compilers/tge/Defines.mak
++include @source_dir@@slash@compilers/pge/Defines.mak
++include @source_dir@@slash@compilers/pct/Defines.mak
++include @source_dir@@slash@compilers/opsc/Defines.mak
++include @source_dir@@slash@ext/nqp-rx/Defines.mak
++include @source_dir@@slash@compilers/data_json/Defines.mak
+ 
+ ###############################################################################
+ #
+@@ -2556,15 +2556,15 @@ malloclist: src/core_pmcs.c
+ 
+ include src/dynpmc/Rules.mak
+ include src/dynoplibs/Rules.mak
+-include runtime/parrot/library/Rules.mak
++include @source_dir@@slash@runtime/parrot/library/Rules.mak
+ include compilers/imcc/Rules.mak
+-include compilers/pirc/Rules.mak
+-include compilers/pge/Rules.mak
+-include compilers/pct/Rules.mak
+-include compilers/opsc/Rules.mak
+-include compilers/tge/Rules.mak
+-include compilers/data_json/Rules.mak
+-include ext/nqp-rx/Rules.mak
++include @source_dir@@slash@compilers/pirc/Rules.mak
++include @source_dir@@slash@compilers/pge/Rules.mak
++include @source_dir@@slash@compilers/pct/Rules.mak
++include @source_dir@@slash@compilers/opsc/Rules.mak
++include @source_dir@@slash@compilers/tge/Rules.mak
++include @source_dir@@slash@compilers/data_json/Rules.mak
++include @source_dir@@slash@ext/nqp-rx/Rules.mak
+ 
+ # Local variables:
+ #   mode: makefile
 diff --git config/init/defaults.pm config/init/defaults.pm
 index d833698..aa5f8f6 100644
 --- config/init/defaults.pm
