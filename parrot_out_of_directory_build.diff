@@ -37,19 +37,19 @@ index 76e3e67..364dd6d 100644
  
  # Run the actual steps from Parrot::Configure
  $conf->runsteps or exit(1);
-diff --git config/gen/makefiles/root.in config/gen/makefiles/root.in
-index 977b356..13b246b 100644
---- config/gen/makefiles/root.in
-+++ config/gen/makefiles/root.in
-@@ -118,7 +118,7 @@ NONGEN_HEADERS   = @TEMP_nongen_headers@
- # The headerizer
- HEADERIZER       = $(PERL) $(BUILD_TOOLS_DIR)/headerizer.pl
- 
--include src/dynpmc/Defines.mak
-+include @source_dir@src/dynpmc/Defines.mak
- include src/dynoplibs/Defines.mak
- include compilers/imcc/Defines.mak
- include compilers/pirc/Defines.mak
+diff --git config/init/defaults.pm config/init/defaults.pm
+index d833698..aa5f8f6 100644
+--- config/init/defaults.pm
++++ config/init/defaults.pm
+@@ -90,7 +90,7 @@ sub runstep {
+         debugging => $conf->options->get('debugging') ? 1 : 0,
+         optimize  => '',
+         verbose   => $conf->options->get('verbose'),
+-        build_dir => $build_dir,
++        # build_dir => $build_dir, # this is now set before this module runs
+         configured_from_file =>
+             $conf->options->get('configured_from_file') || '',
+         configuration_steps => ( join q{ } => $conf->get_list_of_steps() ),
 diff --git config/init/headers.pm config/init/headers.pm
 index b7c0128..ae348af 100644
 --- config/init/headers.pm
@@ -185,7 +185,7 @@ index 819bd23..3b20687 100644
      die $@ if $@;
  
 diff --git lib/Parrot/Configure/Compiler.pm lib/Parrot/Configure/Compiler.pm
-index 8609775..f2de4ee 100644
+index 8609775..0287886 100644
 --- lib/Parrot/Configure/Compiler.pm
 +++ lib/Parrot/Configure/Compiler.pm
 @@ -25,7 +25,9 @@ use warnings;
@@ -254,7 +254,17 @@ index 8609775..f2de4ee 100644
  
      return $output;
  }
-@@ -333,6 +342,8 @@ syntax works ok.
+@@ -187,7 +196,8 @@ Cleans up all files in the root folder that match the glob F<test.*>.
+ 
+ sub cc_clean {    ## no critic Subroutines::RequireFinalReturn
+     my $conf = shift;
+-    unlink map "test_${$}$_", qw( .c .cco .ldo .out ),
++    my $build_dir = $conf->data->get('build_dir');
++    unlink map File::Spec->catfile($build_dir, "test_${$}$_"), qw( .c .cco .ldo .out ),
+         $conf->data->get(qw( o exe )),
+         # MSVC
+         qw( .exe.manifest .ilk .pdb );
+@@ -333,6 +343,8 @@ syntax works ok.
  
  sub genfile {
      my $conf = shift;
@@ -263,7 +273,7 @@ index 8609775..f2de4ee 100644
      my ( $source, $target, %options ) = @_;
  
      my $calling_sub = (caller(1))[3] || q{};
-@@ -340,8 +351,13 @@ sub genfile {
+@@ -340,8 +352,13 @@ sub genfile {
          $conf->append_configure_log($target);
      }
  
@@ -279,7 +289,7 @@ index 8609775..f2de4ee 100644
  
      if ( !exists $options{file_type}) {
          if ( $target =~ m/makefile$/i || $target =~ m/\.mak/) {
-@@ -552,7 +568,7 @@ sub genfile {
+@@ -552,7 +569,7 @@ sub genfile {
      close($in)  or die "Can't close $source: $!";
      close($out) or die "Can't close $target: $!";
  
@@ -288,7 +298,7 @@ index 8609775..f2de4ee 100644
  }
  
  # Return the next subexpression from the expression in $_[0]
-@@ -673,8 +689,9 @@ sub cond_eval {
+@@ -673,8 +690,9 @@ sub cond_eval {
  sub append_configure_log {
      my $conf = shift;
      my $target = shift;
