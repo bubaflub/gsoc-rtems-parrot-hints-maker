@@ -37,8 +37,67 @@ index 76e3e67..364dd6d 100644
  
  # Run the actual steps from Parrot::Configure
  $conf->runsteps or exit(1);
+diff --git config/auto/pmc.pm config/auto/pmc.pm
+index 59d2df8..8bb16d6 100644
+--- config/auto/pmc.pm
++++ config/auto/pmc.pm
+@@ -35,6 +35,8 @@ sub _init {
+ 
+ sub runstep {
+     my ( $self, $conf ) = @_;
++    my $build_dir = $conf->data->get('build_dir');
++    my $source_dir = $conf->data->get('source_dir');
+ 
+     my @pmc = sort_pmcs( @{ $self->{srcpmc} } );
+ 
+@@ -53,20 +55,20 @@ E_NOTE
+ 
+     $TEMP_pmc_build .= <<END;
+ PMC2C_FILES = \\
+-    lib/Parrot/Pmc2c/Pmc2cMain.pm \\
+-    lib/Parrot/Pmc2c/Parser.pm \\
+-    lib/Parrot/Pmc2c/Dumper.pm \\
+-    lib/Parrot/Pmc2c/PMC.pm \\
+-    lib/Parrot/Pmc2c/Method.pm \\
+-    lib/Parrot/Pmc2c/PCCMETHOD.pm \\
+-    lib/Parrot/Pmc2c/MULTI.pm \\
+-    lib/Parrot/Pmc2c/PMCEmitter.pm \\
+-    lib/Parrot/Pmc2c/MethodEmitter.pm \\
+-    lib/Parrot/Pmc2c/Library.pm \\
+-    lib/Parrot/Pmc2c/UtilFunctions.pm \\
+-    lib/Parrot/Pmc2c/PMC/default.pm \\
+-    lib/Parrot/Pmc2c/PMC/Null.pm \\
+-    lib/Parrot/Pmc2c/PMC/RO.pm
++    $source_dir/lib/Parrot/Pmc2c/Pmc2cMain.pm \\
++    $source_dir/lib/Parrot/Pmc2c/Parser.pm \\
++    $source_dir/lib/Parrot/Pmc2c/Dumper.pm \\
++    $source_dir/lib/Parrot/Pmc2c/PMC.pm \\
++    $source_dir/lib/Parrot/Pmc2c/Method.pm \\
++    $source_dir/lib/Parrot/Pmc2c/PCCMETHOD.pm \\
++    $source_dir/lib/Parrot/Pmc2c/MULTI.pm \\
++    $source_dir/lib/Parrot/Pmc2c/PMCEmitter.pm \\
++    $source_dir/lib/Parrot/Pmc2c/MethodEmitter.pm \\
++    $source_dir/lib/Parrot/Pmc2c/Library.pm \\
++    $source_dir/lib/Parrot/Pmc2c/UtilFunctions.pm \\
++    $source_dir/lib/Parrot/Pmc2c/PMC/default.pm \\
++    $source_dir/lib/Parrot/Pmc2c/PMC/Null.pm \\
++    $source_dir/lib/Parrot/Pmc2c/PMC/RO.pm
+ END
+ 
+     for my $pmc ( split( /\s+/, $pmc_list ) ) {
+@@ -99,8 +101,8 @@ END
+ src/pmc/$pmc.c : src/pmc/$pmc.dump
+ \t\$(PMC2CC) src/pmc/$pmc.pmc
+ 
+-src/pmc/$pmc.dump : vtable.dump $parent_dumps src/pmc/$pmc.pmc \$(PMC2C_FILES) $pccmethod_depend
+-\t\$(PMC2CD) src/pmc/$pmc.pmc
++src/pmc/$pmc.dump : vtable.dump $parent_dumps $source_dir/src/pmc/$pmc.pmc \$(PMC2C_FILES) $source_dir/$pccmethod_depend
++\t\$(PMC2CD) $source_dir/src/pmc/$pmc.pmc
+ 
+ include/pmc/pmc_$pmc.h: src/pmc/$pmc.c
+ 
 diff --git config/gen/makefiles/root.in config/gen/makefiles/root.in
-index 977b356..dcc191c 100644
+index 977b356..e3f3936 100644
 --- config/gen/makefiles/root.in
 +++ config/gen/makefiles/root.in
 @@ -48,7 +48,7 @@ VERSION_DIR     = @versiondir@
@@ -70,6 +129,51 @@ index 977b356..dcc191c 100644
 +include @source_dir@@slash@compilers/opsc/Defines.mak
 +include @source_dir@@slash@ext/nqp-rx/Defines.mak
 +include @source_dir@@slash@compilers/data_json/Defines.mak
+ 
+ ###############################################################################
+ #
+@@ -712,7 +712,7 @@ PMC2CV = $(PERL) $(BUILD_TOOLS_DIR)/pmc2c.pl --vtable @no_lines_flag@
+ .pmc.c : # suffix rule (limited support)
+ 	$(PMC2CC) $<
+ 
+-vtable.dump : src/vtable.tbl lib/Parrot/Pmc2c/PCCMETHOD_BITS.pm
++vtable.dump : @source_dir@@slash@src/vtable.tbl lib/Parrot/Pmc2c/PCCMETHOD_BITS.pm
+ 	$(PMC2CV)
+ 
+ # This is a listing of all targets meant to be called by users
+@@ -1153,13 +1153,13 @@ runtime/parrot/include/iterator.pasm : $(INC_DIR)/enums.h $(H2INC)
+ runtime/parrot/include/call_bits.pasm : $(INC_DIR)/enums.h $(H2INC)
+ 	$(PERL) $(H2INC) $(INC_DIR)/enums.h $@
+ lib/Parrot/Pmc2c/PCCMETHOD_BITS.pm : $(INC_DIR)/enums.h $(H2INC)
+-	$(PERL) $(H2INC) $(INC_DIR)/enums.h $@
++	$(PERL) $(H2INC) $(INC_DIR)/enums.h @build_dir@@slash@$@
+ 
+ runtime/parrot/include/libpaths.pasm : $(INC_DIR)/library.h $(H2INC)
+ 	$(PERL) $(H2INC) $(INC_DIR)/library.h $@
+ 
+ runtime/parrot/include/dlopenflags.pasm : $(INC_DIR)/platform_interface.h $(H2INC)
+-	$(PERL) $(H2INC) $(INC_DIR)/platform_interface.h $@
++	$(PERL) $(H2INC) $(INC_DIR)/platform_interface.h @source_dir@@slash@$@
+ 
+ runtime/parrot/include/datatypes.pasm : $(INC_DIR)/datatypes.h $(H2INC)
+ 	$(PERL) $(H2INC) $(INC_DIR)/datatypes.h $@
+@@ -1302,7 +1302,7 @@ src/sub$(O) : $(PARROT_H_HEADERS) $(INC_DIR)/oplib/ops.h \
+ 	include/pmc/pmc_sub.h include/pmc/pmc_continuation.h
+ 
+ src/string/api$(O) : $(PARROT_H_HEADERS) src/string/api.str \
+-	src/string/private_cstring.h src/string/api.c
++	src/string/private_cstring.h @source_dir@@slash@src/string/api.c
+ 
+ src/string/primitives$(O) : $(PARROT_H_HEADERS) src/string/primitives.c
+ 
+@@ -1566,8 +1566,8 @@ src/ops/core_ops$(O) : src/ops/core_ops.c \
+ # $(CONFIGURE_GENERATED_FILES) : Configure.pl
+ #	$(PERL) Configure.pl
+ 
+-$(INC_DIR)/vtable.h : src/vtable.tbl $(BUILD_TOOLS_DIR)/vtable_h.pl lib/Parrot/Vtable.pm
+-	$(PERL) $(BUILD_TOOLS_DIR)/vtable_h.pl
++$(INC_DIR)/vtable.h : @source_dir@@slash@src/vtable.tbl $(BUILD_TOOLS_DIR)/vtable_h.pl @source_dir@@slash@lib/Parrot/Vtable.pm
++	$(PERL) $(BUILD_TOOLS_DIR)/vtable_h.pl @source_dir@@slash@src/vtable.tbl @build_dir@@slash@include/parrot/vtable.h
  
  ###############################################################################
  #
@@ -425,3 +529,86 @@ index 7f73011..7107b1d 100644
      );
      return @postconfiguration_tests;
  };
+diff --git lib/Parrot/H2inc.pm lib/Parrot/H2inc.pm
+index 8347320..819d4f9 100644
+--- lib/Parrot/H2inc.pm
++++ lib/Parrot/H2inc.pm
+@@ -5,6 +5,8 @@ package Parrot::H2inc;
+ use strict;
+ use warnings;
+ use Exporter;
++use File::Basename qw(dirname);
++use File::Path qw(make_path);
+ our @ISA = qw( Exporter );
+ our @EXPORT_OK = qw(
+     parse_file
+@@ -47,6 +49,10 @@ sub parse_file {
+     $out_file =~ s{\\}{/}g; # transform Windows backslash
+ 
+     my ( %values, $last_val, $cur, $or_continues );
++    my $out_dir = dirname($out_file);
++    if (! -d $out_dir) {
++        make_path($out_dir);
++    }
+     open my $fh, '<', $in_file or die "Can't open $in_file: $!\n";
+     while ( my $line = <$fh> ) {
+         if (
+diff --git tools/build/h2inc.pl tools/build/h2inc.pl
+index 0c1ec42..f2f1bf8 100644
+--- tools/build/h2inc.pl
++++ tools/build/h2inc.pl
+@@ -19,7 +19,9 @@ Invoked by F<make>.  Imports functions from Parrot::H2inc.
+ 
+ use strict;
+ use warnings;
+-use lib qw( lib );
++use File::Spec;
++use FindBin qw($Bin);
++use lib File::Spec->catfile($Bin, '..', '..', 'lib' );
+ use Parrot::H2inc qw(
+     parse_file
+     perform_directive
+diff --git tools/build/vtable_h.pl tools/build/vtable_h.pl
+index 13048c4..45bf8f8 100644
+--- tools/build/vtable_h.pl
++++ tools/build/vtable_h.pl
+@@ -8,7 +8,7 @@ tools/build/vtable_h.pl - Create the vtable header
+ 
+ =head1 SYNOPSIS
+ 
+- % perl tools/build/vtable_h.pl
++ % perl tools/build/vtable_h.pl <input_file> <output_file>
+ 
+ =head1 DESCRIPTION
+ 
+@@ -27,13 +27,26 @@ uses C<Parrot::Vtable>.
+ 
+ use strict;
+ use warnings;
+-
+-use lib 'lib';
++use File::Spec;
++use FindBin qw($Bin);
++use lib File::Spec->catfile($Bin, '..', '..', 'lib');
++use File::Basename qw(dirname);
++use File::Path qw(make_path);
+ use Parrot::Vtable;
+ 
+-my $vtable = parse_vtable();
++my $usage = "Usage: $0 <input_file> <output_file>\n";
++
++die $usage unless @ARGV == 2;
++my ($in_file, $out_file) = @ARGV;
++
++my $vtable = parse_vtable($in_file);
++
++my $out_dir = dirname($out_file);
++if (! -d $out_dir) {
++    make_path($out_dir);
++}
+ 
+-open my $OUT, '>', 'include/parrot/vtable.h' or die $!;
++open my $OUT, '>', $out_file or die $!;
+ 
+ print $OUT <<'EOF';
+ /* ex: set ro:
