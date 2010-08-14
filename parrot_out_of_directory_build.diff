@@ -553,6 +553,34 @@ index 8347320..819d4f9 100644
      open my $fh, '<', $in_file or die "Can't open $in_file: $!\n";
      while ( my $line = <$fh> ) {
          if (
+diff --git lib/Parrot/Pmc2c/Dumper.pm lib/Parrot/Pmc2c/Dumper.pm
+index fc12e72..db32439 100644
+--- lib/Parrot/Pmc2c/Dumper.pm
++++ lib/Parrot/Pmc2c/Dumper.pm
+@@ -8,6 +8,7 @@ use warnings;
+ use Parrot::Pmc2c::UtilFunctions qw(slurp spew filename);
+ use Parrot::Pmc2c::Parser qw(parse_pmc);
+ use Carp;
++use File::Copy qw(mv);
+ 
+ use base 'Exporter';
+ @Parrot::Pmc2c::Dumper::EXPORT_OK = 'dump_pmc';
+@@ -45,6 +46,7 @@ sub dump_pmc {
+     my ($self)    = @_;
+     my $pmc2cMain = $self;
+     my @files     = @{ $pmc2cMain->{args} };
++    my $cwd       = $pmc2cMain->{cwd};
+     my $pmcs;
+ 
+     # help those dumb 'shells' that are not shells
+@@ -77,6 +79,7 @@ sub dump_pmc {
+         gen_parent_reverse_lookup_info( $pmc, $pmcs, $vtable_dump );
+ 
+         $pmc->dump;
++        mv($pmc->filename('.dump'), $cwd);
+     }
+ 
+     return 1;
 diff --git tools/build/h2inc.pl tools/build/h2inc.pl
 index 0c1ec42..f2f1bf8 100644
 --- tools/build/h2inc.pl
@@ -568,6 +596,18 @@ index 0c1ec42..f2f1bf8 100644
  use Parrot::H2inc qw(
      parse_file
      perform_directive
+diff --git tools/build/pmc2c.pl tools/build/pmc2c.pl
+index 788d775..29b819a 100644
+--- tools/build/pmc2c.pl
++++ tools/build/pmc2c.pl
+@@ -39,6 +39,7 @@ my $self = Parrot::Pmc2c::Pmc2cMain->new(
+         opt     => \%options,
+         args    => \@args,
+         bin     => $Bin,
++        pwd     => $ENV{PWD}
+     }
+ );
+ 
 diff --git tools/build/vtable_h.pl tools/build/vtable_h.pl
 index 13048c4..45bf8f8 100644
 --- tools/build/vtable_h.pl
